@@ -20,19 +20,28 @@ class _MyWebViewState extends State<MyWebView> {
   @override
   void initState() {
     super.initState();
-    requestStoragePermission();
+    _requestStoragePermission();
   }
 
-  /// Request storage permissions (handle Android 13+ properly)
-  Future<void> requestStoragePermission() async {
-    if (await Permission.manageExternalStorage.request().isGranted) {
+  /// Request both storage and manage external storage permissions
+  Future<void> _requestStoragePermission() async {
+    // Request the new "manage external storage" permission for Android 11+
+    final manageStatus = await Permission.manageExternalStorage.request();
+    if (manageStatus.isGranted) {
+      print("Manage external storage permission granted");
+    } else {
+      print("Manage external storage permission denied");
+    }
+    // Also request the traditional storage permission
+    final storageStatus = await Permission.storage.request();
+    if (storageStatus.isGranted) {
       print("Storage permission granted");
     } else {
       print("Storage permission denied");
     }
   }
 
-  /// Load cookies before opening WebView
+  /// Load cookies before opening the WebView
   Future<void> _loadCookies() async {
     List<Cookie> cookies = await _cookieManager.getCookies(url: WebUri(_url));
     for (var cookie in cookies) {
@@ -46,7 +55,7 @@ class _MyWebViewState extends State<MyWebView> {
     }
   }
 
-  /// Print cookies after the page is loaded
+  /// Print cookies after the page loads
   Future<void> _printCookies() async {
     List<Cookie> cookies = await _cookieManager.getCookies(url: WebUri(_url));
     for (var cookie in cookies) {
@@ -62,6 +71,11 @@ class _MyWebViewState extends State<MyWebView> {
       ),
       body: InAppWebView(
         initialUrlRequest: URLRequest(url: WebUri(_url)),
+        initialOptions: InAppWebViewGroupOptions(
+          crossPlatform: InAppWebViewOptions(
+            useOnDownloadStart: true, // Enable the download callback
+          ),
+        ),
         initialSettings: InAppWebViewSettings(
           hardwareAcceleration: false,
           javaScriptEnabled: true,
@@ -82,39 +96,74 @@ class _MyWebViewState extends State<MyWebView> {
           if (url != null) {
             await _loadCookies();
             print("Page loaded: $url");
-            await _printCookies(); // Print cookies after the page loads
+            await _printCookies();
+            // Optional: Remove 'download' attributes from iframes via JS
+            await _webViewController.evaluateJavascript(source: """
+              document.querySelectorAll('iframe').forEach(iframe => {
+                iframe.removeAttribute('download');
+              });
+            """);
           }
         },
         onDownloadStartRequest: (controller, request) async {
           print("Download requested: ${request.url}");
+          // If it's a PDF (likely auto-triggered from an iframe), skip automatic download
+          if (request.mimeType == "application/pdf" && request.contentDisposition != null && request.contentDisposition!.contains("inline")) {
+            print("Detected inline PDF (auto-triggered). Skipping automatic download.");
+            return;
+          }
+
           await _downloadFile(request.url.toString());
         },
       ),
     );
   }
 
-  /// Download file and handle storage correctly
+  /// Download file while ensuring storage permissions and saving into a dedicated folder
   Future<void> _downloadFile(String url) async {
     print("Starting download for: $url");
 
-    final directory = await getExternalStorageDirectory();
-    final savedDir = directory?.path ?? "";
-
-    if (savedDir.isNotEmpty) {
-      try {
-        await FlutterDownloader.enqueue(
-          url: url,
-          savedDir: savedDir,
-          showNotification: true,
-          openFileFromNotification: true,
-          saveInPublicStorage: true,
-        );
-        print("Download enqueued successfully.");
-      } catch (e) {
-        print("Download failed: $e");
+    // Ensure storage permission is granted.
+    if (!await Permission.storage.isGranted) {
+      print("Storage permission not granted, requesting...");
+      await _requestStoragePermission();
+      if (!await Permission.storage.isGranted) {
+        print("Permission still denied. Aborting download.");
+        return;
       }
-    } else {
-      print("Failed to get storage directory.");
+    }
+
+    try {
+      String? savePath = (await getExternalStorageDirectory())?.path;
+      if (savePath == null) {
+        print("Failed to get storage directory.");
+        return;
+      }
+
+      // Create a subdirectory for downloads if it doesn't exist.
+      final Directory directory = Directory("$savePath/DownloadedFiles");
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+
+      // Retrieve cookies from the current session for the download URL.
+      List<Cookie> cookies = await _cookieManager.getCookies(url: WebUri(url));
+      String cookieHeader =
+      cookies.map((cookie) => "${cookie.name}=${cookie.value}").join("; ");
+
+      await FlutterDownloader.enqueue(
+        url: url,
+        savedDir: directory.path,
+        headers: {"cookie": cookieHeader},
+        showNotification: true,
+        openFileFromNotification: true,
+        // Remove saveInPublicStorage to avoid issues with FileProvider configuration.
+      );
+
+      print("Download enqueued successfully.");
+    } catch (e) {
+      print("Download failed: $e");
     }
   }
+
 }

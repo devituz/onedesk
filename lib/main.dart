@@ -98,12 +98,12 @@ class _OfflinePageState extends State<OfflinePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).appBarTheme.backgroundColor, // 📌 AppBar rangi
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(5), // 🔹 AppBar balandligini 40px ga tushirish
+        preferredSize: const Size.fromHeight(5),
         child: AppBar(
-          backgroundColor: Theme.of(context).appBarTheme.backgroundColor, // 📌 AppBar rangi
-          foregroundColor: Theme.of(context).appBarTheme.foregroundColor, // 📌 AppBar ichki matn rangi            elevation: 0,
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         ),
       ),
       body: LayoutBuilder(
@@ -120,7 +120,7 @@ class _OfflinePageState extends State<OfflinePage> {
                 children: [
                   // Animated Wi-Fi icon
                   Icon(
-                    color: Theme.of(context).textTheme.bodyLarge?.color, // 📌 Tizim rejimiga mos matn rangi
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
 
                     Icons.wifi_off,
                     size: iconSize,
@@ -138,7 +138,7 @@ class _OfflinePageState extends State<OfflinePage> {
                     style: GoogleFonts.poppins(
                       fontSize: textSize,
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).textTheme.bodyLarge?.color, // 📌 Tizim rejimiga mos matn rangi
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
 
                     ),
                   ),
@@ -147,8 +147,8 @@ class _OfflinePageState extends State<OfflinePage> {
                     'Please check your connection and try again!',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                      fontSize: 20, // 📌 Oldingi subTextSize o‘rniga 20 qo‘ydim
-                      color: Theme.of(context).textTheme.bodyLarge?.color, // 📌 Tizim rejimiga mos matn rangi
+                      fontSize: 20,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
 

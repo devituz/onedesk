@@ -9,10 +9,7 @@ class Assets {
   static const String constantsStrings = 'lib/constants/strings.dart';
   static const String constantsValidators = 'lib/constants/validators.dart';
   static const String generatedAssets = 'lib/generated/assets.dart';
-  static const String libDede = 'lib/dede.dart';
   static const String libHome = 'lib/Home.dart';
   static const String libMain = 'lib/main.dart';
-  static const String libMain22 = 'lib/main22.dart';
-  static const String libOk = 'lib/ok.dart';
 
 }

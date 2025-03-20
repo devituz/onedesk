@@ -103,7 +103,7 @@ class _MyWebViewState extends State<MyWebView> {
     if (savedDir.isNotEmpty) {
       try {
         await FlutterDownloader.enqueue(
-          url: url,
+          url: "https://pub.dev/static/hash-pb35dgsm/img/pub-dev-logo.svg",
           savedDir: savedDir,
           showNotification: true,
           openFileFromNotification: true,

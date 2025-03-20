@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'Home.dart';
 import 'constants/validators.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FlutterDownloader.initialize(
+      debug: true, // optional: set to false to disable printing logs to console (default: true)
+      ignoreSsl: true // option: set to false to disable working with http links (default: false)
+  );
+
   runApp(
     MultiProvider(
       providers: [
@@ -67,12 +75,14 @@ class _MyAppState extends State<MyApp> {
         textTheme: const TextTheme(bodyLarge: TextStyle(color: Colors.white)),
       ),
 
-      home: ValueListenableBuilder<bool>(
-        valueListenable: isOnline,
-        builder: (context, online, child) {
-          return online ? CheckFirebasePage() : OfflinePage();
-        },
-      ),
+      // home: ValueListenableBuilder<bool>(
+      //   valueListenable: isOnline,
+      //   builder: (context, online, child) {
+      //     return online ? CheckFirebasePage() : OfflinePage();
+      //   },
+      // ),
+
+      home: MyWebView(),
     );
   }
 }
@@ -183,3 +193,4 @@ class ThemeNotifier extends ChangeNotifier {
     );
   }
 }
+

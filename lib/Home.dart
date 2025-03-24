@@ -121,49 +121,50 @@ class _MyWebViewState extends State<MyWebView> {
 
   /// Download file while ensuring storage permissions and saving into a dedicated folder
   Future<void> _downloadFile(String url) async {
-    print("Starting download for: $url");
-
-    // Ensure storage permission is granted.
-    if (!await Permission.storage.isGranted) {
-      print("Storage permission not granted, requesting...");
-      await _requestStoragePermission();
-      if (!await Permission.storage.isGranted) {
-        print("Permission still denied. Aborting download.");
-        return;
-      }
-    }
-
     try {
+      print("Starting download for: $url");
+
+      // Ensure storage permission is granted.
+      if (!await Permission.storage.isGranted) {
+        print("Storage permission not granted, requesting...");
+        await _requestStoragePermission();
+        if (!await Permission.storage.isGranted) {
+          print("Permission still denied. Aborting download.");
+          return;
+        }
+      }
+
       String? savePath = (await getExternalStorageDirectory())?.path;
       if (savePath == null) {
         print("Failed to get storage directory.");
         return;
       }
 
-      // Create a subdirectory for downloads if it doesn't exist.
-      final Directory directory = Directory("$savePath/DownloadedFiles");
-      if (!await directory.exists()) {
-        await directory.create(recursive: true);
+
+      try {
+        // Retrieve cookies from the current session for the download URL.
+        List<Cookie> cookies = await _cookieManager.getCookies(url: WebUri(url));
+        String cookieHeader =
+        cookies.map((cookie) => "${cookie.name}=${cookie.value}").join("; ");
+
+        await FlutterDownloader.enqueue(
+          url: url,
+          savedDir: "/storage/emulated/0/Download",
+          headers: {"cookie": cookieHeader},
+          showNotification: true,
+          openFileFromNotification: true,
+          saveInPublicStorage: true,
+
+        );
+
+        print("Download enqueued successfully.");
+      } catch (e) {
+        print("Error while enqueuing the download: $e");
       }
-
-      // Retrieve cookies from the current session for the download URL.
-      List<Cookie> cookies = await _cookieManager.getCookies(url: WebUri(url));
-      String cookieHeader =
-      cookies.map((cookie) => "${cookie.name}=${cookie.value}").join("; ");
-
-      await FlutterDownloader.enqueue(
-        url: url,
-        savedDir: directory.path,
-        headers: {"cookie": cookieHeader},
-        showNotification: true,
-        openFileFromNotification: true,
-        // Remove saveInPublicStorage to avoid issues with FileProvider configuration.
-      );
-
-      print("Download enqueued successfully.");
     } catch (e) {
-      print("Download failed: $e");
+      print("Unexpected error occurred: $e");
     }
   }
+
 
 }

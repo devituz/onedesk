@@ -3,7 +3,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
+
 
 class MyWebView extends StatefulWidget {
   const MyWebView({super.key});
@@ -20,24 +20,34 @@ class _MyWebViewState extends State<MyWebView> {
   @override
   void initState() {
     super.initState();
-    _requestStoragePermission();
+    requestStoragePermission();
   }
 
   /// Request both storage and manage external storage permissions
-  Future<void> _requestStoragePermission() async {
-    // Request the new "manage external storage" permission for Android 11+
-    final manageStatus = await Permission.manageExternalStorage.request();
-    if (manageStatus.isGranted) {
-      print("Manage external storage permission granted");
-    } else {
-      print("Manage external storage permission denied");
+
+  Future<void> requestStoragePermission() async {
+    // Ruxsatlarni tekshiramiz
+    var storageStatus = await Permission.storage.status;
+    var manageStorageStatus = await Permission.manageExternalStorage.status;
+
+    if (storageStatus.isGranted && manageStorageStatus.isGranted) {
+      print("Barcha kerakli ruxsatlar allaqachon berilgan.");
+      return;
     }
-    // Also request the traditional storage permission
-    final storageStatus = await Permission.storage.request();
-    if (storageStatus.isGranted) {
-      print("Storage permission granted");
+
+    // Agar ruxsat rad etilgan bo‘lsa, qayta so‘raymiz
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.storage,
+      Permission.manageExternalStorage, // Android 10+ uchun
+    ].request();
+
+    if (statuses[Permission.storage]!.isGranted && statuses[Permission.manageExternalStorage]!.isGranted) {
+      print("Barcha kerakli ruxsatlar berildi.");
+    } else if (statuses[Permission.storage]!.isPermanentlyDenied || statuses[Permission.manageExternalStorage]!.isPermanentlyDenied) {
+      print("Ruxsat doimiy rad etilgan. Foydalanuvchini sozlamalarga yo‘naltiramiz.");
+      await openAppSettings(); // Foydalanuvchini ilova sozlamalariga yo‘naltirish
     } else {
-      print("Storage permission denied");
+      print("Ruxsatlar rad etildi.");
     }
   }
 
@@ -127,7 +137,7 @@ class _MyWebViewState extends State<MyWebView> {
       // Ensure storage permission is granted.
       if (!await Permission.storage.isGranted) {
         print("Storage permission not granted, requesting...");
-        await _requestStoragePermission();
+        await requestStoragePermission();
         if (!await Permission.storage.isGranted) {
           print("Permission still denied. Aborting download.");
           return;

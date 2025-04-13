@@ -39,7 +39,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _requestPermissions();
 
     _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> result) {
       isOnline.value = !result.contains(ConnectivityResult.none);
@@ -48,17 +47,6 @@ class _MyAppState extends State<MyApp> {
 
 
 
-  Future<void> _requestPermissions() async {
-    // 📌 Android versiyasini tekshirish
-    if (
-    await Permission.storage.request().isGranted ||
-        await Permission.manageExternalStorage.request().isGranted) {
-      debugPrint("✅ Ruxsat berildi");
-    } else {
-      debugPrint("🚫 Ruxsat yo'q, ilova sozlamalaridan berilishi kerak!");
-      openAppSettings(); // 📌 Foydalanuvchini sozlamalarga yo‘naltirish
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,14 +63,13 @@ class _MyAppState extends State<MyApp> {
         textTheme: const TextTheme(bodyLarge: TextStyle(color: Colors.white)),
       ),
 
-      // home: ValueListenableBuilder<bool>(
-      //   valueListenable: isOnline,
-      //   builder: (context, online, child) {
-      //     return online ? CheckFirebasePage() : OfflinePage();
-      //   },
-      // ),
+      home: ValueListenableBuilder<bool>(
+        valueListenable: isOnline,
+        builder: (context, online, child) {
+          return online ? CheckFirebasePage() : OfflinePage();
+        },
+      ),
 
-      home: MyWebView(),
     );
   }
 }
